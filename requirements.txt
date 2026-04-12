@@ -1,0 +1,28 @@
+# Core dependencies (using latest versions)
+openai-whisper>=20250625
+faster-whisper>=1.2.1
+ffmpeg-python>=0.2.0
+PyYAML>=6.0.1
+
+# Audio/video processing
+pydub>=0.25.1
+soundfile>=0.12.1
+
+# Voice Activity Detection
+silero-vad>=6.2.1
+
+# Utilities
+tqdm>=4.67.3
+click>=8.3.1
+colorlog>=6.8.2
+
+# Optional for GPU acceleration
+torch>=2.10.0
+torchcodec
+numpy>=2.4.3
+
+# For better FFmpeg integration
+ffprobe-python>=0.5.1
+
+# Optional: Computer Vision (for zone detection - only if using YOLO for dynamic detection)
+# ultralytics>=8.0.0  # Uncomment if you want YOLO-based zone detection instead of static zones
