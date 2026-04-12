@@ -1,5 +1,8 @@
 # Automated VOD-to-Shorts Clipper
 
+## Alpha 0.7.2 Version
+### Expect some issues, if you're a developer feel free to make a pull request
+
 An intelligent Python application that automatically processes long-form VODs (2-16 hours), transcribes them using Whisper, detects "clippable" moments based on keywords, and generates short-form video clips optimized for platforms like YouTube Shorts, TikTok, and Instagram Reels.
 
 ## Features
