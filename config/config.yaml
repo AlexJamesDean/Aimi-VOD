@@ -1,0 +1,124 @@
+# VOD-to-Shorts Clipper Configuration (Enhanced)
+
+# Whisper Settings
+whisper:
+  model: "large-v3"  # Options: tiny, base, small, medium, large, large-v3, turbo
+  device: "cuda"  # cpu or cuda
+  compute_type: "float16"  # float32, float16, int8
+  word_timestamps: true  # Enable word-level timestamps for speech-aware buffering
+
+# Audio Extraction Settings
+audio:
+  sample_rate: 16000
+  channels: 1  # mono
+  codec: "pcm_s16le"  # PCM 16-bit
+
+# Audio Analysis Settings (NEW)
+audio_analysis:
+  enabled: true
+  vad_model: "silero"  # silero (lightweight, accurate)
+  energy_threshold: 0.1  # RMS energy threshold for spike detection
+  min_speech_duration: 0.3  # Minimum speech duration in seconds for VAD
+  sentiment_window: 5.0  # Window size for sentiment calculation (seconds)
+
+# Clip Detection Settings
+detection:
+  keywords:
+    - "no way"
+    - "let's go"
+    - "clip that"
+    - "what just happened"
+    - "oh my god"
+    - "unbelievable"
+    - "insane"
+    - "crazy"
+    - "amazing"
+    - "wow"
+    - "incredible"
+    - "holy"
+    - "that's wild"
+    - "you gotta see this"
+  min_confidence: 0.5  # Minimum confidence score for detection
+  case_sensitive: false
+
+  # Multimodal scoring weights (NEW)
+  multimodal:
+    energy_weight: 0.25
+    speech_weight: 0.25
+    keyword_weight: 0.30
+    sentiment_weight: 0.20
+    min_combined_score: 0.4  # Minimum combined score to be considered clip-worthy
+
+# Speech-Aware Buffering (NEW)
+speech_aware:
+  enabled: true
+  respect_sentence_boundaries: true  # Don't cut mid-sentence
+  min_sentence_gap: 1.5  # Minimum gap between sentences (seconds)
+  extend_to_sentence_end: true  # Extend buffer to natural sentence end
+
+# Buffering Settings
+buffering:
+  pre_buffer: 12.0  # seconds before detected segment
+  post_buffer: 12.0  # seconds after detected segment
+  merge_gap: 5.0  # merge clips if gap between them is less than this (seconds)
+
+# Zone-Based Composition (NEW)
+zones:
+  enabled: false  # Enable zone-based extraction and composition
+  layout: "vtuber_top_game_full"  # Predefined layouts
+  face:
+    extract_enabled: true
+    position: "right_bottom"  # right_bottom, left_bottom, right_top, left_top, center
+    extract_resolution: 512x512
+    overlay_position: "top_center"  # Where to place in final composition
+    overlay_scale: 1.5  # Scale factor for overlay
+    overlay_opacity: 1.0
+    z_index: 1  # Layer order (higher = on top)
+  action:
+    position: "center"
+    extract_resolution: "source"
+    z_index: 0
+
+# Subtitle Settings (NEW)
+subtitles:
+  enabled: true
+  font: "Arial"
+  font_size: 48
+  font_color: "white"
+  position: "bottom"  # top, bottom
+  keyword_highlight: true  # Highlight detected keywords
+  highlight_color: "#FF6B6B"  # Red highlight for keywords
+  background: true  # Add semi-transparent background
+  background_color: "#00000080"  # Semi-transparent black
+
+# Clip Extraction Settings
+extraction:
+  output_format: "mp4"
+  video_codec: "libx264"
+  audio_codec: "aac"
+  preset: "fast"  # ffmpeg encoding preset
+  crf: 23  # Constant Rate Factor (quality)
+  vertical_format: true  # Convert to vertical (9:16) format
+  target_resolution: "1080x1920"  # Width x Height
+  frame_rate: 30
+
+# File Paths
+paths:
+  input_dir: "./input"
+  output_dir: "./output"
+  clips_dir: "./output/clips"
+  logs_dir: "./output/logs"
+  temp_dir: "./temp"
+
+# Performance Settings
+performance:
+  max_workers: 4  # Number of parallel workers for clip extraction
+  cleanup_temp: true  # Clean up temporary files after processing
+  use_vad_chunked: true  # Use VAD-chunked transcription for long VODs
+
+# Logging Settings
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  console_output: true
+  file_output: true
+  log_filename: "vod_clipper_{timestamp}.log"
