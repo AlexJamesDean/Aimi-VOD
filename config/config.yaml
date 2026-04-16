@@ -58,9 +58,9 @@ speech_aware:
 
 # Buffering Settings
 buffering:
-  pre_buffer: 12.0  # seconds before detected segment
-  post_buffer: 12.0  # seconds after detected segment
-  merge_gap: 5.0  # merge clips if gap between them is less than this (seconds)
+  pre_buffer: 4.0  # seconds before detected segment
+  post_buffer: 4.0  # seconds after detected segment
+  merge_gap: 1.5  # merge clips if gap between them is less than this (seconds)
 
 # Zone-Based Composition (NEW)
 zones:

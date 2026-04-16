@@ -81,13 +81,16 @@ class SegmentDetector:
             audio_analysis.get("energy_spikes", []) if audio_analysis else []
         )
 
-        for segment in transcription:
-            text = segment.get("text", "")
-            start = segment.get("start", 0)
-            end = segment.get("end", 0)
+        # Use a sliding window so keywords that span two Whisper segments
+        # still get matched, and short segments can be scored with neighbors' context.
+        window_size = self.detection_config.get("window_size", 2)
+        non_empty = [s for s in transcription if s.get("text", "").strip()]
 
-            if not text.strip():
-                continue
+        for i, segment in enumerate(non_empty):
+            window = non_empty[i : i + window_size]
+            text = " ".join(s.get("text", "") for s in window)
+            start = window[0].get("start", 0)
+            end = window[-1].get("end", 0)
 
             # Score components
             keyword_score = self._score_keywords(text)
@@ -107,7 +110,9 @@ class SegmentDetector:
 
             matches = self._find_keyword_matches(text)
 
-            if combined_score >= self.min_combined_score and matches:
+            # Accept if the combined multimodal score is strong enough, even
+            # without a keyword match — a loud reaction is still clip-worthy.
+            if combined_score >= self.min_combined_score:
                 detected_segment = {
                     "start": start,
                     "end": end,
@@ -132,19 +137,30 @@ class SegmentDetector:
                     f"sp={speech_score:.2f}, se={sentiment_score:.2f})"
                 )
 
+        # Deduplicate overlapping sliding-window hits, keeping the highest-scoring.
+        detected_segments = self._dedupe_overlapping(detected_segments)
+
         self.logger.info(f"Detected {len(detected_segments)} clippable segments")
 
-        # Filter by minimum confidence
-        if self.min_confidence > 0:
-            filtered = [
-                s for s in detected_segments if s["confidence"] >= self.min_confidence
-            ]
-            self.logger.info(
-                f"Filtered to {len(filtered)} segments with confidence >= {self.min_confidence}"
-            )
-            return filtered
-
         return detected_segments
+
+    def _dedupe_overlapping(
+        self, segments: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Collapse overlapping windowed detections, keeping the best-scored one."""
+        if not segments:
+            return []
+
+        sorted_segs = sorted(segments, key=lambda s: s["start"])
+        kept: List[Dict[str, Any]] = [sorted_segs[0]]
+        for seg in sorted_segs[1:]:
+            last = kept[-1]
+            if seg["start"] < last["end"]:
+                if seg["confidence"] > last["confidence"]:
+                    kept[-1] = seg
+            else:
+                kept.append(seg)
+        return kept
 
     def _find_keyword_matches(self, text: str) -> List[str]:
         """Find keyword matches in text"""
@@ -263,8 +279,9 @@ class SegmentDetector:
         if not segments:
             return []
 
-        pre_buffer = self.buffering_config.get("pre_buffer", 12.0)
-        post_buffer = self.buffering_config.get("post_buffer", 12.0)
+        pre_buffer = self.buffering_config.get("pre_buffer", 4.0)
+        post_buffer = self.buffering_config.get("post_buffer", 4.0)
+        merge_gap = self.buffering_config.get("merge_gap", 1.5)
 
         speech_enabled = self.speech_config.get("enabled", True)
         respect_boundaries = self.speech_config.get("respect_sentence_boundaries", True)
@@ -307,7 +324,7 @@ class SegmentDetector:
             buffered_segments.append(buffered_segment)
 
         # Merge overlapping
-        merged = self._merge_segments(buffered_segments, merge_gap=5.0)
+        merged = self._merge_segments(buffered_segments, merge_gap=merge_gap)
 
         # Finalize clips with correct key names for clip_generator
         final_clips = []
@@ -379,9 +396,9 @@ class SegmentDetector:
         if not segments:
             return []
 
-        pre_buffer = self.buffering_config.get("pre_buffer", 12.0)
-        post_buffer = self.buffering_config.get("post_buffer", 12.0)
-        merge_gap = self.buffering_config.get("merge_gap", 5.0)
+        pre_buffer = self.buffering_config.get("pre_buffer", 4.0)
+        post_buffer = self.buffering_config.get("post_buffer", 4.0)
+        merge_gap = self.buffering_config.get("merge_gap", 1.5)
 
         # Apply buffers
         buffered = []
