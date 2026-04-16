@@ -8,7 +8,7 @@ import re
 import subprocess
 import ffmpeg
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import logging
 import concurrent.futures
 

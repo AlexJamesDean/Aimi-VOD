@@ -62,61 +62,8 @@ class InputHandler:
     def _extract_metadata(self, video_path: str) -> Dict[str, Any]:
         """Extract video metadata using ffmpeg"""
         try:
-            # Use ffmpeg.probe to get metadata
             probe = ffmpeg.probe(video_path)
-
-            # Get video stream
-            video_stream = next(
-                (
-                    stream
-                    for stream in probe["streams"]
-                    if stream["codec_type"] == "video"
-                ),
-                None,
-            )
-
-            # Get audio stream
-            audio_stream = next(
-                (
-                    stream
-                    for stream in probe["streams"]
-                    if stream["codec_type"] == "audio"
-                ),
-                None,
-            )
-
-            metadata = {
-                "duration": float(probe["format"]["duration"]),
-                "size": int(probe["format"]["size"]),
-                "bit_rate": int(probe["format"]["bit_rate"])
-                if "bit_rate" in probe["format"]
-                else 0,
-            }
-
-            if video_stream:
-                metadata.update(
-                    {
-                        "resolution": f"{video_stream.get('width', 0)}x{video_stream.get('height', 0)}",
-                        "frame_rate": self._parse_frame_rate(
-                            video_stream.get("r_frame_rate", "0/0")
-                        ),
-                        "video_codec": video_stream.get("codec_name", "Unknown"),
-                        "pixel_format": video_stream.get("pix_fmt", "Unknown"),
-                        "has_b_frames": video_stream.get("has_b_frames", 0),
-                    }
-                )
-
-            if audio_stream:
-                metadata.update(
-                    {
-                        "audio_codec": audio_stream.get("codec_name", "Unknown"),
-                        "audio_channels": audio_stream.get("channels", 0),
-                        "audio_sample_rate": audio_stream.get("sample_rate", 0),
-                    }
-                )
-
-            return metadata
-
+            return self._parse_probe_data(probe)
         except ffmpeg.Error as e:
             self.logger.error(f"FFmpeg probe error: {e}")
             # Fallback to using ffprobe directly
@@ -130,6 +77,49 @@ class InputHandler:
                 "video_codec": "Unknown",
                 "audio_codec": "Unknown",
             }
+
+    def _parse_probe_data(self, probe: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse ffprobe JSON output into the metadata dict."""
+        video_stream = next(
+            (s for s in probe["streams"] if s["codec_type"] == "video"),
+            None,
+        )
+        audio_stream = next(
+            (s for s in probe["streams"] if s["codec_type"] == "audio"),
+            None,
+        )
+
+        metadata = {
+            "duration": float(probe["format"]["duration"]),
+            "size": int(probe["format"]["size"]),
+            "bit_rate": int(probe["format"]["bit_rate"])
+            if "bit_rate" in probe["format"]
+            else 0,
+        }
+
+        if video_stream:
+            metadata.update(
+                {
+                    "resolution": f"{video_stream.get('width', 0)}x{video_stream.get('height', 0)}",
+                    "frame_rate": self._parse_frame_rate(
+                        video_stream.get("r_frame_rate", "0/0")
+                    ),
+                    "video_codec": video_stream.get("codec_name", "Unknown"),
+                    "pixel_format": video_stream.get("pix_fmt", "Unknown"),
+                    "has_b_frames": video_stream.get("has_b_frames", 0),
+                }
+            )
+
+        if audio_stream:
+            metadata.update(
+                {
+                    "audio_codec": audio_stream.get("codec_name", "Unknown"),
+                    "audio_channels": audio_stream.get("channels", 0),
+                    "audio_sample_rate": audio_stream.get("sample_rate", 0),
+                }
+            )
+
+        return metadata
 
     def _extract_metadata_fallback(self, video_path: str) -> Dict[str, Any]:
         """Fallback metadata extraction using ffprobe directly"""
@@ -148,7 +138,7 @@ class InputHandler:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             probe_data = json.loads(result.stdout)
 
-            return self._extract_metadata(video_path)  # Reuse the parsing logic
+            return self._parse_probe_data(probe_data)
 
         except subprocess.CalledProcessError as e:
             self.logger.error(f"FFprobe subprocess error: {e}")

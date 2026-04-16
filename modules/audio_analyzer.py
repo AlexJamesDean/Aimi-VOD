@@ -415,7 +415,7 @@ class AudioAnalyzer:
             if words and len(words) > 0:
                 # Find sentence ends based on punctuation
                 for i, word_info in enumerate(words):
-                    word = word_info.get("word", "")
+                    word = word_info.get("word") or ""
                     if any(p in word for p in ".!?"):
                         boundaries.append(
                             {

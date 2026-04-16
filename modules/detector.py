@@ -366,7 +366,7 @@ class SegmentDetector:
             words = segment.get("words", [])
             if words:
                 for word_info in words:
-                    word = word_info.get("word", "")
+                    word = word_info.get("word") or ""
                     if any(c in word for c in sentence_end_chars):
                         boundaries.append(word_info.get("start", 0))
             else:

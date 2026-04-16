@@ -138,7 +138,7 @@ class SubtitleGenerator:
         styles = f"""[V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 Style: Default,{font},{font_size},{font_color_ass},00000000,{font_color_ass},{bg_color_ass},0,0,0,0,100,100,0,0,1,2,2,{self._get_ass_alignment(position)},10,10,{margin_v},1
-Style: Highlighted,{font},{font_size},{highlight_color_ass},00000000,{highlight_color_ass},{bg_color_ass},1,0,0,0,100,100,0,0,1,2,2,{self._get_ass_ass_alignment(position)},10,10,{margin_v},1
+Style: Highlighted,{font},{font_size},{highlight_color_ass},00000000,{highlight_color_ass},{bg_color_ass},1,0,0,0,100,100,0,0,1,2,2,{self._get_ass_alignment(position)},10,10,{margin_v},1
 """
         return styles
 
